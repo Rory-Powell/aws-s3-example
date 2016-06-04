@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @SpringBootApplication
 public class App implements CommandLineRunner {
@@ -45,6 +46,9 @@ public class App implements CommandLineRunner {
         Path saveAs = Paths.get(DOWNLOAD_DIRECTORY + file.getName());
 
         // Download the file
-        s3Service.DownloadObject(BUCKET, S3_DIRECTORY + fileName, saveAs);
+        s3Service.downloadObject(BUCKET, S3_DIRECTORY + fileName, saveAs);
+
+        // List the files in the bucket
+        List<String> keys =  s3Service.listKeysInBucket(BUCKET);
     }
 }

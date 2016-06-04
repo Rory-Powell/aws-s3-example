@@ -4,9 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.PropertySource;
@@ -16,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @PropertySource("classpath:config.properties")
@@ -53,7 +53,7 @@ public class S3Service implements IS3Service {
      * @param saveAs    The file path to save to save the download as.
      */
     @Override
-    public void DownloadObject(String bucket, String key, Path saveAs) {
+    public void downloadObject(String bucket, String key, Path saveAs) {
         log.info("Downloading object from S3\n" + key);
         try {
             // Download from S3
@@ -72,5 +72,39 @@ public class S3Service implements IS3Service {
         } catch (IOException e) {
             log.error("Error writing file\n" + key, e);
         }
+    }
+
+    /**
+     * Retrieve a list of all object keys from an S3 bucket.
+     * @param bucket    The bucket to list keys from.
+     * @return          The keys.
+     */
+    public List<String> listKeysInBucket(String bucket) {
+
+        return listSummariesInBucket(bucket).stream()
+                .map(S3ObjectSummary::getKey)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Retrieve a list of all object summaries from an S3 bucket.
+     * @param bucket    The bucket to list summaries from.
+     * @return          The {@link S3ObjectSummary}'s.
+     */
+    private List<S3ObjectSummary> listSummariesInBucket(String bucket) {
+        // Get initial object listing from bucket
+        ObjectListing listing = s3Client.listObjects(bucket);
+
+        // Populate summaries from listing
+        List<S3ObjectSummary> summaries = listing.getObjectSummaries();
+
+        // Step over all listings in the bucket and continue populating summaries
+        while (listing.isTruncated()) {
+            listing = s3Client.listNextBatchOfObjects(listing);
+            summaries.addAll(listing.getObjectSummaries());
+        }
+
+        return summaries;
     }
 }
