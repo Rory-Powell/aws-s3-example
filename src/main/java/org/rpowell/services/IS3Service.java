@@ -1,15 +1,11 @@
 package org.rpowell.services;
 
 import java.io.File;
-import java.util.List;
+import java.nio.file.Path;
 
 public interface IS3Service {
 
-    void uploadFile(File file);
+    void uploadObject(File file, String bucket, String uploadDirectory);
 
-    void uploadFiles(List<File> files);
-
-    List<String> retrieveFileNames();
-
-    File retrieveFile(String fileName);
+    void DownloadObject(String bucket, String key, Path saveAs);
 }
